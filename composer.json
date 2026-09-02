@@ -1,0 +1,19 @@
+{
+  "name": "metrixs/mx-cookieless-analytics",
+  "description": "Cookieless, privacy-friendly web analytics. Opt-in tracking (off until you connect), GDPR-friendly, EU-hosted. Automatic shop verification, no DNS records needed. Server-side WooCommerce-style order tracking.",
+  "type": "prestashop-module",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "MetriXs Analytics",
+      "email": "info@metrixs.eu",
+      "homepage": "https://metrixs.eu"
+    }
+  ],
+  "require": {
+    "php": ">=7.2.5"
+  },
+  "config": {
+    "prepend-autoloader": false
+  }
+}
