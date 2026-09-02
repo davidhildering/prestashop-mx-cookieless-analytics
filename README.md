@@ -11,8 +11,10 @@ Cookieless, privacy-friendly web analytics for [PrestaShop](https://prestashop.c
 
 ## Installation
 
-1. Download the module ZIP and upload it in **Modules → Module Manager → Upload a module**, or unzip it into `modules/mx_cookieless_analytics`.
-2. Click **Configure**.
+1. On the [releases page](https://github.com/davidhildering/prestashop-mx-cookieless-analytics/releases), download the **module ZIP from the release's "Assets" section** — the file named `mx-cookieless-analytics-X.Y.Z.zip`.
+2. ⚠️ Do **not** use the "Source code (zip)" that GitHub lists next to it: that archive contains the repository, not the installable module.
+3. In your shop's back office, go to **Modules → Module Manager → Upload a module** and upload the downloaded ZIP.
+4. Click **Configure**.
 
 ## Setup
 
