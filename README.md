@@ -8,10 +8,13 @@ Cookieless, privacy-friendly web analytics for [PrestaShop](https://prestashop.c
 - **EU-hosted.** Data lives on MetriXs servers in Germany and never leaves the EU.
 - **Server-side order tracking.** `order_completed` is sent from your server the moment an order is validated, so redirect-based payment methods (iDEAL, Carte Bancaire, bank transfers) are captured. Revenue, AOV, conversion rate, funnel, and top products appear in your MetriXs dashboard.
 - **Logged-in customer exclusion.** On by default, so your own test orders and account visits never pollute your stats.
+- **AI traffic panel.** See visitors arriving from ChatGPT, Perplexity, Gemini and other AI assistants. Team and Pro plans add a GEO-readiness audit (can AI systems read your pages?) and a classic SEO audit on the Visibility tab.
+- **Security tab.** An audit of your shop's HTTPS, security-header and cookie posture, plus a live feed of blocked bots.
+- **MCP server.** Query your analytics read-only from Claude, ChatGPT, Gemini or Copilot: MetriXs ships a first-party MCP server at mcp.metrixs.eu.
 
 ## Installation
 
-1. On the [releases page](https://github.com/davidhildering/prestashop-mx-cookieless-analytics/releases), download the **module ZIP from the release's "Assets" section** — the file named `mx-cookieless-analytics-X.Y.Z.zip`.
+1. On the [releases page](https://github.com/davidhildering/prestashop-mx-cookieless-analytics/releases), download the **module ZIP from the release's "Assets" section**, the file named `mx-cookieless-analytics-X.Y.Z.zip`.
 2. ⚠️ Do **not** use the "Source code (zip)" that GitHub lists next to it: that archive contains the repository, not the installable module.
 3. In your shop's back office, go to **Modules → Module Manager → Upload a module** and upload the downloaded ZIP.
 4. Click **Configure**.
