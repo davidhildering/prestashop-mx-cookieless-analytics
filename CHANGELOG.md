@@ -1,3 +1,9 @@
+# 1.1.0
+## 2026-09-14
+
+1. [](#new)
+    * One-click connect: a "Connect with MetriXs" button on the module config page opens the MetriXs dashboard, where you create (or open) your account and the shop is added, connected and verified automatically. No API key copying. The manual API-key flow works unchanged.
+
 # 1.0.0
 ## 2026-09-02
 

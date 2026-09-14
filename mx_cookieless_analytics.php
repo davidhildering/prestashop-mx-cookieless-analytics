@@ -38,7 +38,7 @@ class Mx_Cookieless_Analytics extends Module
     {
         $this->name = 'mx_cookieless_analytics';
         $this->tab = 'analytics_stats';
-        $this->version = '1.0.0';
+        $this->version = '1.1.0';
         $this->author = 'MetriXs Analytics';
         $this->need_instance = 0;
         $this->ps_versions_compliancy = array('min' => '8.0.0', 'max' => _PS_VERSION_);
@@ -105,6 +105,25 @@ class Mx_Cookieless_Analytics extends Module
     {
         $output = '';
 
+        // One-click connect (Phase 2, docs/mobile-onboarding-plan.md), all
+        // within the admin-only module config page (AdminModules requires a
+        // back-office session, so both the start and the dashboard callback
+        // are employee-gated; the one-time `state` is the CSRF token).
+        //   ?mxcoan_oauth=start    → store a one-time state, redirect to the
+        //                            dashboard's /connect/prestashop page
+        //   ?mxcoan_oauth=callback ← dashboard redirect with ?code=…&state=…:
+        //                            exchange the pair for a site-scoped API
+        //                            key (single-use, returned once), then
+        //                            run the normal challenge → verify
+        //                            handshake.
+        $oauth = (string) Tools::getValue('mxcoan_oauth');
+        if ($oauth === 'start') {
+            $this->oauthStart();
+        }
+        if ($oauth === 'callback') {
+            $this->oauthCallback();
+        }
+
         if (Tools::isSubmit('submit' . $this->name)) {
             Configuration::updateValue('MXCOAN_ENABLED', (int) Tools::getValue('MXCOAN_ENABLED'));
             Configuration::updateValue('MXCOAN_API_KEY', $this->sanitizeApiKey(Tools::getValue('MXCOAN_API_KEY')));
@@ -132,14 +151,24 @@ class Mx_Cookieless_Analytics extends Module
     private function statusBanner()
     {
         if (!Configuration::get('MXCOAN_CONNECTED')) {
-            if ((string) Configuration::get('MXCOAN_API_KEY') === '') {
-                return '';
+            // One-click connect CTA (Phase 2) — the recommended path.
+            $oauthUrl = $this->configPageUrl() . '&mxcoan_oauth=start';
+            $html = Module::displayConfirmation(
+                $this->trans(
+                    'Recommended: one-click connect. Creates (or opens) your MetriXs account and connects + verifies this shop automatically. No API key copying.',
+                    array(),
+                    'Modules.Mxcookielessanalytics.Admin'
+                )
+                . ' <a class="button" href="' . $oauthUrl . '">Connect with MetriXs</a>'
+            );
+            if ((string) Configuration::get('MXCOAN_API_KEY') !== '') {
+                $html .= Module::displayError($this->trans(
+                    'Not verified yet — saving the form retries the automatic verification. Check your API key and that this shop is publicly reachable over HTTPS.',
+                    array(),
+                    'Modules.Mxcookielessanalytics.Admin'
+                ));
             }
-            return Module::displayError($this->trans(
-                'Not verified yet — saving the form retries the automatic verification. Check your API key and that this shop is publicly reachable over HTTPS.',
-                array(),
-                'Modules.Mxcookielessanalytics.Admin'
-            ));
+            return $html;
         }
         if (!Configuration::get('MXCOAN_ENABLED')) {
             return Module::displayConfirmation($this->trans(
@@ -342,6 +371,96 @@ class Mx_Cookieless_Analytics extends Module
      * @param bool $force
      * @return void
      */
+    /**
+     * One-click connect, step 1: generate a one-time state and redirect the
+     * employee to the MetriXs dashboard's /connect/prestashop page.
+     *
+     * @return void
+     */
+    private function oauthStart()
+    {
+        $state = bin2hex(random_bytes(16));
+        Configuration::updateValue('MXCOAN_OAUTH_STATE', $state);
+        Configuration::updateValue('MXCOAN_OAUTH_EXPIRES', time() + 900);
+
+        $domain = (string) Configuration::get('MXCOAN_DOMAIN');
+        if ($domain === '') {
+            $domain = preg_replace('#^www\.#', '', (string) Tools::getShopDomainSsl(false));
+        }
+
+        $url = $this->apiBase() . '/connect/prestashop?' . http_build_query(array(
+            'state' => $state,
+            'site' => $domain,
+            'back' => $this->configPageUrl() . '&mxcoan_oauth=callback',
+        ));
+
+        Tools::redirect($url);
+    }
+
+    /**
+     * One-click connect, step 2 (dashboard callback): validate the single-use
+     * state (hash_equals, cleared before any use), exchange { code, state }
+     * for the API key and run the challenge → verify handshake.
+     *
+     * @return void
+     */
+    private function oauthCallback()
+    {
+        $code = preg_replace('/[^0-9a-f]/', '', (string) Tools::getValue('code'));
+        $state = preg_replace('/[^A-Za-z0-9]/', '', (string) Tools::getValue('state'));
+
+        $stored = (string) Configuration::get('MXCOAN_OAUTH_STATE');
+        $expires = (int) Configuration::get('MXCOAN_OAUTH_EXPIRES');
+        // Clear BEFORE any use — the state is single-use.
+        Configuration::updateValue('MXCOAN_OAUTH_STATE', '');
+        Configuration::updateValue('MXCOAN_OAUTH_EXPIRES', 0);
+
+        if ($code === '' || $stored === '' || !hash_equals($stored, $state) || time() > $expires) {
+            Tools::redirectAdmin($this->configPageUrl() . '&mxcoan_oauth_msg=failed');
+        }
+
+        $exchange = $this->apiPost('/api/integrations/prestashop/exchange', array(
+            'code' => $code,
+            'state' => $state,
+        ), '', true);
+        if (empty($exchange['ok']) || empty($exchange['data']['apiKey'])) {
+            Tools::redirectAdmin($this->configPageUrl() . '&mxcoan_oauth_msg=failed');
+        }
+
+        Configuration::updateValue('MXCOAN_API_KEY', $this->sanitizeApiKey((string) $exchange['data']['apiKey']));
+
+        // Normal challenge → verify handshake with the fresh key.
+        $this->attemptConnect(true);
+        Tools::redirectAdmin($this->configPageUrl());
+    }
+
+    /**
+     * The back-office URL of this module's config page (token included, so
+     * it is a valid redirect target for the dashboard's callback).
+     *
+     * @return string
+     */
+    private function configPageUrl()
+    {
+        return $this->context->link->getAdminLink('AdminModules', true)
+            . '&configure=' . $this->name;
+    }
+
+    /**
+     * The MetriXs API base (HTTPS only, default fallback).
+     *
+     * @return string
+     */
+    private function apiBase()
+    {
+        $apiBase = rtrim((string) Configuration::get('MXCOAN_API_BASE'), '/');
+        if ($apiBase === '' || stripos($apiBase, 'https://') !== 0) {
+            $apiBase = 'https://app.metrixs.eu';
+        }
+
+        return $apiBase;
+    }
+
     private function attemptConnect($force = false)
     {
         $apiKey = (string) Configuration::get('MXCOAN_API_KEY');
