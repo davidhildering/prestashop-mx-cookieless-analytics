@@ -32,13 +32,13 @@ class Mx_Cookieless_Analytics extends Module
      * tracker release and publish a new module release so shops fetch the
      * fresh script.
      */
-    const TRACKER_VERSION = '1.1.0';
+    const TRACKER_VERSION = '1.2.0';
 
     public function __construct()
     {
         $this->name = 'mx_cookieless_analytics';
         $this->tab = 'analytics_stats';
-        $this->version = '1.1.0';
+        $this->version = '1.1.1';
         $this->author = 'MetriXs Analytics';
         $this->need_instance = 0;
         $this->ps_versions_compliancy = array('min' => '8.0.0', 'max' => _PS_VERSION_);
