@@ -1,3 +1,9 @@
+# 1.1.2
+## 2026-10-05
+
+1. [](#fixed)
+    * Critical fix: server-side order_completed events were rejected by the MetriXs API since 1.1.1 (the event payload no longer matched the ingest schema). The payload now mirrors the tracker shape (n/u/d/p with commerce props). Revenue tracking works again for every payment method, including redirect methods like iDEAL. Orders with very many items no longer drop the whole event (items prop is truncated to the first item instead).
+
 # 1.1.1
 ## 2026-09-16
 

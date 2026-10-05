@@ -38,7 +38,7 @@ class Mx_Cookieless_Analytics extends Module
     {
         $this->name = 'mx_cookieless_analytics';
         $this->tab = 'analytics_stats';
-        $this->version = '1.1.1';
+        $this->version = '1.1.2';
         $this->author = 'MetriXs Analytics';
         $this->need_instance = 0;
         $this->ps_versions_compliancy = array('min' => '8.0.0', 'max' => _PS_VERSION_);

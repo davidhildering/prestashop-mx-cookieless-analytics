@@ -2,7 +2,7 @@
 <module>
     <name>mx_cookieless_analytics</name>
     <displayName><![CDATA[MX Cookieless Analytics]]></displayName>
-    <version><![CDATA[1.1.1]]></version>
+    <version><![CDATA[1.1.2]]></version>
     <description><![CDATA[Cookieless, privacy-friendly web analytics. Opt-in tracking (off until you connect), GDPR-friendly, EU-hosted. Automatic shop verification, no DNS records needed.]]></description>
     <author><![CDATA[MetriXs Analytics]]></author>
     <tab><![CDATA[analytics_stats]]></tab>
