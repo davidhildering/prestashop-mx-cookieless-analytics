@@ -346,16 +346,35 @@ class Mx_Cookieless_Analytics extends Module
             }
         }
 
-        $payload = array(
-            'event_name' => 'order_completed',
-            'd' => $this->siteDomain(),
-            'total' => (string) (float) $order->total_paid_tax_incl,
+        // Body shape mirrors the tracker payload (n, u, d, p): the /api/event
+        // zod schema (trackSchema) requires n + u for BOTH auth paths, and
+        // the commerce fields are props under p (normalizeCommerceProps
+        // converts total + item prices to EUR at ingest from p.currency).
+        $itemsJson = json_encode($items);
+        // Prop values are capped at 2000 chars server-side; a truncated JSON
+        // would be invalid, so on overflow retry with the first item only,
+        // else drop the prop (revenue stays correct, top-products partial).
+        if ($itemsJson !== false && strlen($itemsJson) > 2000 && isset($items[0])) {
+            $single = json_encode(array($items[0]));
+            $itemsJson = ($single !== false && strlen($single) <= 2000) ? $single : '';
+        }
+
+        $props = array(
+            'total' => (float) $order->total_paid_tax_incl,
             'currency' => (string) $params['currency']->iso_code,
-            'items' => json_encode($items),
+            'order_id' => (string) $order->id,
+            'items' => $itemsJson === false || $itemsJson === '' ? null : $itemsJson,
         );
         if ($discountCode !== '') {
-            $payload['discount_code'] = $discountCode;
+            $props['discount_code'] = $discountCode;
         }
+
+        $payload = array(
+            'n' => 'order_completed',
+            'u' => 'https://' . $this->siteDomain() . '/order-confirmation/' . (int) $order->id,
+            'd' => $this->siteDomain(),
+            'p' => $props,
+        );
 
         $this->apiPost('/api/event', $payload, $apiKey, false);
     }
